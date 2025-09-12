@@ -127,8 +127,8 @@ const Button = ({ children, variant = "default", style, gradientColors, hoverSca
 
   const variantStyle =
     variant === "default"
-      ? { backgroundColor: gradientColors ? "transparent" : "#FD366E" }
-      : { backgroundColor: "rgba(255,255,255,0.08)", borderWidth: 1, borderColor: "#fff3" }
+      ? { backgroundColor: gradientColors ? "transparent" : "hsl(165, 96%, 71%)" } 
+      : { backgroundColor: "rgba(255,255,255,0.08)", borderWidth: 1, borderColor: "hsl(210, 11%, 30%)" }
 
   const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 
@@ -169,16 +169,16 @@ const Button = ({ children, variant = "default", style, gradientColors, hoverSca
 
 const Input = ({ style, placeholderTextColor, ...props }) => {
   const baseColors = {
-    borderColor: 'hsla(240, 100%, 100%, 0.08)',
-    backgroundColor: 'hsla(220, 17%, 98%, 0.06)',
-    color: 'hsl(160, 14%, 93%)',
+    borderColor: 'hsl(210, 11%, 15%)', // More subtle border
+    backgroundColor: 'hsl(210, 11%, 11%)', // Darker background
+    color: 'hsl(160, 14%, 93%)', // Light text
   }
   return (
     <TextInput
       style={[
         {
           height: 56,
-          borderRadius: 16,
+          borderRadius: 12, // Slightly less rounded corners
           borderWidth: 1,
           ...baseColors,
           fontSize: 16,
@@ -189,7 +189,7 @@ const Input = ({ style, placeholderTextColor, ...props }) => {
         },
         style,
       ]}
-      placeholderTextColor={placeholderTextColor || 'hsla(160, 14%, 93%, 0.7)'}
+      placeholderTextColor={placeholderTextColor || 'hsl(210, 11%, 50%)'} // More subtle placeholder
       {...props}
     />
   )
@@ -213,7 +213,7 @@ const Label = ({ children, style, ...props }) => (
 
 
 
-import ForgotPasswordModal from "../componants/ForgotPasswordModal";
+import ForgotPasswordModal from "../componants/modals/ForgotPasswordModal";
 
 export default function LoginSampleCombined() {
   // Direct color values - no theme system
@@ -379,11 +379,11 @@ export default function LoginSampleCombined() {
                 style={{
                   borderRadius: 24,
                   borderWidth: 1,
-                  borderColor: 'hsla(240, 100%, 100%, 0.12)',
+                  borderColor: 'hsl(210, 11%, 15%)', // More subtle border
                   ...(Platform.OS === 'web' ? { backdropFilter: "blur(20px)" } : {}),
-                  backgroundColor: 'hsla(220, 17%, 98%, 0.08)',
-                  shadowColor: 'hsl(165, 96%, 71%)',
-                  shadowOpacity: 0.15,
+                  backgroundColor: 'hsl(210, 11%, 9%)', // Darker background
+                  shadowColor: 'hsl(210, 11%, 30%)', // More subtle shadow
+                  shadowOpacity: 0.2,
                   shadowRadius: 20,
                   shadowOffset: { width: 0, height: 10 },
                   position: "relative",
@@ -395,14 +395,14 @@ export default function LoginSampleCombined() {
                   opacity: loginCardOpacity,
                 }}
               >
-                {/* Animated gradient overlay */}
+                {/* Simplified gradient overlay */}
                 <LinearGradient
                   colors={[
-                    'hsla(165, 96%, 71%, 0.08)',
+                    'hsla(165, 96%, 71%, 0.08)', 
                     'transparent',
                     'hsla(160, 100%, 50%, 0.06)',
                     'transparent',
-                    'hsla(165, 96%, 71%, 0.04)'
+                    'hsla(165, 96%, 71%, 0.04)' 
                   ]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
@@ -410,16 +410,9 @@ export default function LoginSampleCombined() {
                   pointerEvents="none"
                 />
                 
-                {/* Subtle pattern overlay */}
-                <View style={[
-                  StyleSheet.absoluteFill,
-                  {
-                    backgroundColor: 'hsla(220, 17%, 98%, 0.03)',
-                    opacity: 0.6
-                  }
-                ]} />
-
-                {/* Success indicator floating animation */}
+                {/* Removed pattern overlay for cleaner look */}
+                
+                {/* Simplified success indicator */}
                 <Animated.View
                   style={{
                     position: 'absolute',
@@ -437,12 +430,12 @@ export default function LoginSampleCombined() {
                     width: 40,
                     height: 40,
                     borderRadius: 20,
-                    backgroundColor: 'hsla(165, 96%, 71%, 0.15)',
+                    backgroundColor: 'hsla(165, 96%, 71%, 0.15)', 
                     alignItems: 'center',
                     justifyContent: 'center',
                     ...(Platform.OS === 'web' ? { backdropFilter: 'blur(8px)' } : {}),
                   }}>
-                    <CheckCircle2 size={20} color="hsl(165, 96%, 71%)" />
+                    <CheckCircle2 size={20} color="hsl(165, 96%, 71%)" /> 
                   </View>
                 </Animated.View>
 
@@ -493,7 +486,7 @@ export default function LoginSampleCombined() {
                     </Text>
                     
                     <Text style={{ 
-                      color: 'hsla(160, 14%, 93%, 0.8)', 
+                      color: 'hsl(210, 11%, 71%)',
                       fontSize: 16, 
                       fontWeight: "500", 
                       textAlign: 'center',
@@ -516,7 +509,7 @@ export default function LoginSampleCombined() {
                       <Animated.View style={{ gap: 12, transform: [{ translateX: nameTrans }], opacity: nameOpacity }}>
                         <Label>
                           <User size={16} color="hsl(165, 96%, 71%)" />
-                          <Text style={{ color: 'hsla(160, 14%, 93%, 0.7)', fontWeight: '500', marginLeft: 8 }}>Name</Text>
+                          <Text style={{ color: 'hsl(210, 11%, 71%)', fontWeight: '500', marginLeft: 8 }}>Name</Text>
                         </Label>
                         <Input
                           id="name"
@@ -537,7 +530,7 @@ export default function LoginSampleCombined() {
                     >
                       <Label>
                         <Mail size={16} color="hsl(165, 96%, 71%)" />
-                        <Text style={{ color: 'hsla(160, 14%, 93%, 0.7)', fontWeight: '500', marginLeft: 8 }}>Email Address</Text>
+                        <Text style={{ color: 'hsl(210, 11%, 71%)', fontWeight: '500', marginLeft: 8 }}>Email Address</Text>
                       </Label>
                       <Input
                         id="email"
@@ -571,9 +564,9 @@ export default function LoginSampleCombined() {
                         pointerEvents={showGitHubTip ? 'auto' : 'none'}
                       >
                         <View style={{
-                          backgroundColor: 'hsla(165, 96%, 71%, 0.08)',
+                          backgroundColor: 'hsla(165, 96%, 71%, 0.08)', 
                           borderLeftWidth: 3,
-                          borderLeftColor: 'hsl(165, 96%, 71%)',
+                          borderLeftColor: 'hsl(165, 96%, 71%)', 
                           borderRadius: 12,
                           padding: 16,
                           marginTop: 8,
@@ -585,12 +578,12 @@ export default function LoginSampleCombined() {
                             width: 20,
                             height: 20,
                             borderRadius: 10,
-                            backgroundColor: 'hsla(165, 96%, 71%, 0.15)',
+                            backgroundColor: 'hsla(165, 96%, 71%, 0.15)', 
                             alignItems: 'center',
                             justifyContent: 'center',
                             marginTop: 2,
                           }}>
-                            <Info size={12} color="hsl(165, 96%, 71%)" />
+                            <Info size={12} color="hsl(165, 96%, 71%)" /> {/* Restored accent color */}
                           </View>
                           <View style={{ flex: 1 }}>
                             <Text style={{
@@ -602,7 +595,7 @@ export default function LoginSampleCombined() {
                               GitHub Integration Tip
                             </Text>
                             <Text style={{
-                              color: 'hsla(160, 14%, 93%, 0.7)',
+                              color: 'hsl(210, 11%, 71%)',
                               fontSize: 14,
                               fontWeight: '400',
                               lineHeight: 18,
@@ -624,7 +617,7 @@ export default function LoginSampleCombined() {
                     >
                       <Label>
                         <Lock size={16} color="hsl(165, 96%, 71%)" />
-                        <Text style={{ color: 'hsla(160, 14%, 93%, 0.7)', fontWeight: '500', marginLeft: 8 }}>Password</Text>
+                        <Text style={{ color: 'hsl(210, 11%, 71%)', fontWeight: '500', marginLeft: 8 }}>Password</Text>
                       </Label>
                       <View style={{ position: "relative" }}>
                         <Input
@@ -666,8 +659,8 @@ export default function LoginSampleCombined() {
                     >
                       <Animated.View style={{ gap: 12, transform: [{ translateX: confirmTrans }], opacity: confirmOpacity }}>
                         <Label>
-                          <Lock size={16} color="hsl(165, 96%, 71%)" />
-                          <Text style={{ color: 'hsla(160, 14%, 93%, 0.7)', fontWeight: '500', marginLeft: 8 }}>Retype Password</Text>
+                          <Lock size={16} color="hsl(210, 11%, 71%)" />
+                          <Text style={{ color: 'hsl(210, 11%, 71%)', fontWeight: '500', marginLeft: 8 }}>Retype Password</Text>
                         </Label>
                         <Input
                           id="confirmPassword"
@@ -702,20 +695,21 @@ export default function LoginSampleCombined() {
 
                     {/* Sign in button */}
                     <Button
-                      gradientColors={['hsl(165, 96%, 71%)', 'hsla(165, 96%, 71%, 0.8)']}
+                      gradientColors={['hsla(165, 95.90%, 71.00%, 0.15)', 'hsla(165, 95.90%, 71.00%, 0.14)']}
                       style={{
                         width: "100%",
                         height: 56,
-                        borderRadius: 16,
+                        borderRadius: 12,
                         shadowColor: 'hsl(165, 96%, 71%)',
                         shadowOpacity: 0.2,
                         shadowRadius: 12,
-                        borderWidth: 0,
+                        borderWidth: 1,
                         flexDirection: "row",
                         alignItems: "center",
                         justifyContent: "center",
                         marginTop: -4,
                         marginBottom: 0,
+                        borderColor: 'hsl(165, 96%, 71%)',
                       }}
                       onPress={async () => {
                         if (mode === 'signup') {
@@ -754,7 +748,7 @@ export default function LoginSampleCombined() {
                         }
                       }}
                     >
-                      <Text style={{ color: 'hsl(160, 8%, 6%)', fontWeight: "500", fontSize: 16 }}>{mode === 'signup' ? 'Create Account' : 'Sign In'}</Text>
+                      <Text style={{ color: 'hsl(165, 96%, 71%)', fontWeight: "500", fontSize: 16 }}>{mode === 'signup' ? 'Create Account' : 'Sign In'}</Text>
                     </Button>
 
                     {/* Divider */}
@@ -772,7 +766,7 @@ export default function LoginSampleCombined() {
                         right: 0,
                         top: "50%",
                         height: 1,
-                        backgroundColor: "hsla(240, 100%, 100%, 0.12)",
+                        backgroundColor: "hsl(210, 11%, 15%)",
                       }} />
                       <View style={{
                         alignItems: "center",
@@ -782,7 +776,7 @@ export default function LoginSampleCombined() {
                         <Text style={{
                           paddingHorizontal: 16,
                           backgroundColor: 'hsl(210, 11%, 7%)',
-                          color: 'hsla(160, 14%, 93%, 0.7)',
+                          color: 'hsl(210, 11%, 50%)',
                           fontWeight: "400",
                           fontSize: 14,
                           borderRadius: 8,
@@ -801,8 +795,8 @@ export default function LoginSampleCombined() {
                           alignItems: "center",
                           justifyContent: "center",
                           margin: 0,
-                          backgroundColor: 'hsla(220, 17%, 98%, 0.06)',
-                          borderColor: 'hsla(240, 100%, 100%, 0.08)',
+                          backgroundColor: 'hsl(210, 11%, 11%)', // More consistent background
+                          borderColor: 'hsl(210, 11%, 15%)', // More subtle border
                           borderWidth: 1,
                           shadowColor: '#000',
                           shadowOpacity: 0.2,
@@ -843,7 +837,7 @@ export default function LoginSampleCombined() {
                     }}
                   >
                     {mode === 'login' ? (
-                      <Text style={{ color: 'hsla(160, 14%, 93%, 0.7)', fontSize: 16, fontWeight: "400" }}>
+                      <Text style={{ color: 'hsl(210, 11%, 71%)', fontSize: 16, fontWeight: "400" }}>
                         New to PRIM?{" "}
                         <Pressable onPress={() => animateMode('signup')}>
                           <Text style={{ color: 'hsl(165, 96%, 71%)', fontWeight: "500", top: Platform.OS === 'web' ? 0 : 5, fontSize: 16 }}>
@@ -852,10 +846,10 @@ export default function LoginSampleCombined() {
                         </Pressable>
                       </Text>
                     ) : (
-                      <Text style={{ color: 'hsla(160, 14%, 93%, 0.7)', fontSize: 16, fontWeight: "400" }}>
+                      <Text style={{ color: 'hsl(210, 11%, 71%)', fontSize: 16, fontWeight: "400" }}>
                         Already on PRIM?{" "}
                         <Pressable onPress={() => animateMode('login')}>
-                          <Text style={{ color: 'hsl(165, 96%, 71%)', fontWeight: "500", top: Platform.OS === 'web' ? 0 : 5, fontSize: 16 }}>
+                          <Text style={{ color: 'hsl(165, 96%, 71%)', fontWeight: "500", top: Platform.OS === 'web' ? 0 : 5, fontSize: 16 }}> {/* Restored accent color */}
                             Sign in
                           </Text>
                         </Pressable>
@@ -941,7 +935,7 @@ export default function LoginSampleCombined() {
                   <Animated.Text
                     style={{
                       fontSize: 20,
-                      color: 'hsla(160, 14%, 93%, 0.7)',
+                      color: 'hsl(210, 11%, 71%)', // More subtle color
                       marginBottom: 48,
                       transform: [{ translateY: descTrans }],
                       opacity: descOpacity,
@@ -965,7 +959,7 @@ export default function LoginSampleCombined() {
             <LinearGradient
               colors={[
                 'hsla(210, 11%, 7%, 1)',
-                'hsla(165, 96%, 71%, 0.02)',
+                'hsla(165, 96%, 71%, 0.02)', 
                 'hsla(210, 11%, 7%, 1)',
                 'hsla(160, 100%, 50%, 0.03)',
                 'hsla(210, 11%, 7%, 1)'

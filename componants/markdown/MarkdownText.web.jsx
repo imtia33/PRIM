@@ -329,6 +329,8 @@ const MarkdownText = ({ markdown = "", renderMermaid = true }) => {
           background-color: transparent !important;
           padding: 0 !important;
           overflow: auto;
+          white-space: pre-wrap;
+          word-wrap: break-word;
         }
         
         /* GitHub theme styles based on current theme */
@@ -568,32 +570,47 @@ const MarkdownText = ({ markdown = "", renderMermaid = true }) => {
         .p-2 { padding: 0.5rem; }
         
         /* Ensure proper styling for markdown elements */
+        .prose {
+          width: 100%;
+          max-width: 100%;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+        }
+        
         .prose h1, .prose h2, .prose h3, 
         .prose h4, .prose h5, .prose h6 {
-          margin-top: 1.5rem;
-          margin-bottom: 1rem;
+          margin-top: 0.5rem;
+          margin-bottom: 0.5rem;
           color: ${theme.text};
+          word-wrap: break-word;
+          overflow-wrap: break-word;
         }
         
         .prose p {
-          margin-bottom: 1rem;
-          line-height: 1.6;
+          margin-bottom: 0.5rem;
+          line-height: 1.4;
           color: ${theme.text};
+          word-wrap: break-word;
+          overflow-wrap: break-word;
         }
         
         .prose ul, .prose ol {
-          margin-bottom: 1rem;
-          padding-left: 2rem;
+          margin-bottom: 0.5rem;
+          padding-left: 1.5rem;
         }
         
         .prose li {
-          margin-bottom: 0.5rem;
+          margin-bottom: 0.25rem;
           color: ${theme.text};
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          line-height: 1.4;
         }
         
         .prose a {
           color: ${theme.mode === 'dark' ? '#58a6ff' : '#0969da'};
           text-decoration: none;
+          line-height: 1.4;
         }
         
         .prose a:hover {
@@ -617,6 +634,9 @@ const MarkdownText = ({ markdown = "", renderMermaid = true }) => {
           width: 100%;
           border-collapse: collapse;
           margin: 1rem 0;
+          display: block;
+          overflow-x: auto;
+          white-space: nowrap;
         }
         
         .prose th, .prose td {
@@ -633,10 +653,38 @@ const MarkdownText = ({ markdown = "", renderMermaid = true }) => {
         .prose td {
           color: ${theme.text};
         }
+        
+        /* Ensure proper text wrapping */
+        .prose * {
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          white-space: pre-wrap;
+        }
+        
+        /* Fix for code blocks */
+        .prose pre {
+          white-space: pre-wrap;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+        }
+        
+        /* Fix for table overflow */
+        .prose table {
+          display: block;
+          overflow-x: auto;
+          white-space: nowrap;
+        }
       `}</style>
       <div 
         ref={previewRef} 
         className="prose prose-invert max-w-none"
+        style={{ 
+          width: '100%', 
+          maxWidth: '100%', 
+          wordWrap: 'break-word', 
+          overflowWrap: 'break-word',
+          whiteSpace: 'pre-wrap'
+        }}
       />
     </div>
   );

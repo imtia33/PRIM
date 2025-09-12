@@ -21,18 +21,19 @@ const MessageBubble = ({ message, theme, isLastMessage, messageBubbleWidth, copy
   const effectiveBubbleWidth = isAIMessage && !isDesktop ? '100%' : messageBubbleWidth;
   
   const containerStyle = isAIMessage ? 
-    [styles.aiMessageContainer, { marginBottom: isLastMessage ? 80 : 16 }] :
-    [styles.userMessageContainer, { marginBottom: isLastMessage ? 80 : 16 }];
+    [styles.aiMessageContainer, { marginBottom: isLastMessage ? 40 : 8 }] :
+    [styles.userMessageContainer, { marginBottom: isLastMessage ? 40 : 8 }];
     
+  // Different styles for AI and user messages
   const bubbleStyle = isAIMessage ?
     [styles.aiMessageBubble, { 
-      backgroundColor: theme.mode === 'dark' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)',
-      borderColor: theme.mode === 'dark' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.2)',
+      backgroundColor: theme.mode === 'dark' ? 'hsl(210, 11%, 11%)' : 'hsl(0, 0%, 98%)',
+      borderColor: theme.mode === 'dark' ? 'hsl(210, 11%, 15%)' : 'hsl(210, 11%, 90%)',
       width: effectiveBubbleWidth,
     }] :
     [styles.userMessageBubble, { 
-      backgroundColor: theme.mode === 'dark' ? 'rgba(31, 41, 55, 0.9)' : 'rgba(249, 250, 251, 0.9)',
-      borderColor: theme.mode === 'dark' ? 'rgba(55, 65, 81, 0.5)' : 'rgba(229, 231, 235, 0.8)',
+      backgroundColor: theme.mode === 'dark' ? 'hsl(210, 11%, 11%)' : 'hsl(0, 0%, 98%)',
+      borderColor: theme.mode === 'dark' ? 'hsl(210, 11%, 15%)' : 'hsl(210, 11%, 90%)',
       width: effectiveBubbleWidth,
     }];
 
@@ -46,7 +47,7 @@ const MessageBubble = ({ message, theme, isLastMessage, messageBubbleWidth, copy
         <View style={bubbleStyle}>
           <ActivityIndicator 
             size="small" 
-            color={theme.mode === 'dark' ? '#93c5fd' : '#3b82f6'} 
+            color={theme.mode === 'dark' ? 'hsl(165, 96%, 71%)' : 'hsl(165, 96%, 71%)'} 
             style={{ marginVertical: 10 }}
           />
           <MarkdownText 
@@ -66,9 +67,8 @@ const MessageBubble = ({ message, theme, isLastMessage, messageBubbleWidth, copy
           <MarkdownText 
             markdown={message.content} 
             theme={theme}
-            textStyle={isAIMessage ? {} : { 
-              color: theme.mode === 'dark' ? '#f3f4f6' : '#f9fafb',
-              textAlign: 'center', // Center text for better appearance
+            textStyle={{ 
+              color: theme.mode === 'dark' ? 'hsl(160, 14%, 93%)' : 'hsl(210, 11%, 15%)',
             }}
             renderMermaid={shouldRenderMermaid}
           />
@@ -76,9 +76,9 @@ const MessageBubble = ({ message, theme, isLastMessage, messageBubbleWidth, copy
         
         {isAIMessage && isStreaming && (
           <View style={styles.typingIndicator}>
-            <View style={[styles.typingDot, { backgroundColor: theme.mode === 'dark' ? '#93c5fd' : '#3b82f6' }]} />
-            <View style={[styles.typingDot, { backgroundColor: theme.mode === 'dark' ? '#93c5fd' : '#3b82f6' }]} />
-            <View style={[styles.typingDot, { backgroundColor: theme.mode === 'dark' ? '#93c5fd' : '#3b82f6' }]} />
+            <View style={[styles.typingDot, { backgroundColor: theme.mode === 'dark' ? 'hsl(165, 96%, 71%)' : 'hsl(165, 96%, 71%)' }]} />
+            <View style={[styles.typingDot, { backgroundColor: theme.mode === 'dark' ? 'hsl(165, 96%, 71%)' : 'hsl(165, 96%, 71%)' }]} />
+            <View style={[styles.typingDot, { backgroundColor: theme.mode === 'dark' ? 'hsl(165, 96%, 71%)' : 'hsl(165, 96%, 71%)' }]} />
           </View>
         )}
       </View>
@@ -90,17 +90,17 @@ const MessageBubble = ({ message, theme, isLastMessage, messageBubbleWidth, copy
             styles.copyButton,
             { 
               opacity: pressed ? 0.7 : 1,
-              marginTop: 8,
-              backgroundColor: theme.mode === 'dark' ? 'rgba(79, 70, 229, 0.3)' : 'rgba(99, 102, 241, 0.1)',
-              padding: 6,
+              marginTop: 4,
+              backgroundColor: theme.mode === 'dark' ? 'hsla(165, 96%, 71%, 0.1)' : 'hsla(165, 96%, 71%, 0.1)',
+              padding: 4,
               borderRadius: 12,
             }
           ]}
         >
           <FontAwesome5 
             name="copy" 
-            size={14} 
-            color={theme.mode === 'dark' ? '#c7d2fe' : '#4f46e5'} 
+            size={12} 
+            color={theme.mode === 'dark' ? 'hsl(165, 96%, 71%)' : 'hsl(165, 96%, 71%)'} 
           />
         </Pressable>
       )}
@@ -110,32 +110,34 @@ const MessageBubble = ({ message, theme, isLastMessage, messageBubbleWidth, copy
 
 const styles = StyleSheet.create({
   aiMessageContainer: {
-    marginBottom: 16,
+    marginBottom: 8,
     alignSelf: 'flex-start',
     alignItems: 'flex-start',
     maxWidth: '100%',
   },
-  aiMessageBubble: {
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    borderBottomLeftRadius: 4,
-    borderWidth: 1,
-    paddingTop:10
-  },
   userMessageContainer: {
-    marginBottom: 16,
+    marginBottom: 8,
     alignSelf: 'flex-end',
     alignItems: 'flex-end',
     maxWidth: '100%',
   },
+  aiMessageBubble: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    maxWidth: '100%',
+    minWidth: 100,
+  },
   userMessageBubble: {
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
     borderBottomRightRadius: 4,
     borderWidth: 1,
-    justifyContent: 'center', // Center content vertically
-    alignItems: 'center', // Center content horizontally
-    paddingTop:10,
-    paddingLeft:10
+    maxWidth: '100%',
+    minWidth: 100,
   },
   copyButton: {
     padding: 8,
@@ -143,9 +145,11 @@ const styles = StyleSheet.create({
   },
   typingIndicator: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 8,
-    height: 20,
+    justifyContent: 'flex-start',
+    marginTop: 4,
+    height: 16,
+    paddingLeft: 12,
+    paddingBottom: 0,
   },
   typingDot: {
     width: 6,

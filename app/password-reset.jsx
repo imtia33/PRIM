@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react"
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Platform } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useTheme } from "../context/ColorMode"
+import { useTheme } from "../context/ColorMode.js"
 import { useRouter } from "expo-router"
 import { confirmPasswordRecovery, handlePasswordResetRedirect } from "../backend/appwrite"
 

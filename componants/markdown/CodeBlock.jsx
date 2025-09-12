@@ -72,26 +72,26 @@ const CodeBlock = ({ code, language , fontSize = 14 }) => {
       backgroundColor: theme.cardBackground || "#1e1e1e",
       borderRadius: 8,
       overflow: "hidden",
-      marginVertical: 8,
+      marginVertical: 4,
       borderWidth: 1,
       borderColor: theme.borderColor || "#333",
-      margin: "12px 0",
-      padding: 5, // Added padding around the code block
+      margin: "8px 0",
+      padding: 3,
     }}>
       {/* Simple Header Bar without dots */}
       <View style={{
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: theme.secondTabBackground || "#2d2d2d",
-        paddingHorizontal: 12,
-        paddingVertical: 8,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
         borderBottomWidth: 1,
         borderBottomColor: theme.borderColor || "#333",
       }}>
         <Text style={{
           color: theme.secondaryText || "#888",
           fontFamily: "cc-regular",
-          fontSize: 12,
+          fontSize: 10,
           textTransform: "uppercase",
         }}>
           {language && language !== 'text' ? language.charAt(0).toUpperCase() + language.slice(1) : "Code"}
@@ -108,7 +108,7 @@ const CodeBlock = ({ code, language , fontSize = 14 }) => {
       >
         <View style={{
           flexDirection: "row",
-          paddingVertical: 12,
+          paddingVertical: 8,
         }}>
           {/* Code with inline line numbers */}
           <View style={{
@@ -128,28 +128,32 @@ const CodeBlock = ({ code, language , fontSize = 14 }) => {
                   <Text style={[{ 
                     color: theme.secondaryText || "#858585",
                     fontFamily: "cc-regular",
-                    paddingRight: 16, // Padding to the right of line numbers
-                    minWidth: 24, // Fixed width for alignment
+                    paddingRight: 12,
+                    minWidth: 20,
                     textAlign: "right",
-                  }, { fontSize, lineHeight: fontSize * 1.5 }]} selectable={false}>
+                  }, { fontSize, lineHeight: fontSize * 1.3 }]} selectable={false}>
                     {String(lineIdx + 1).padStart(2, '0')}
                   </Text>
                   
                   {/* Render tokenized content with preserved whitespace */}
-                  {lineTokens.map((token, tokenIdx) => (
-                    <Text
-                      key={tokenIdx}
-                      selectable={true}
-                      style={[syntaxColors[token.type], { fontSize, lineHeight: fontSize * 1.5 }]}
-                    >
-                      {token.content}
-                    </Text>
-                  ))}
-
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                    {lineTokens.map((token, tokenIdx) => (
+                      <Text
+                        key={tokenIdx}
+                        selectable={true}
+                        style={[syntaxColors[token.type], { 
+                          fontSize, 
+                          lineHeight: fontSize * 1.3,
+                          flexWrap: 'wrap',
+                        }]}
+                      >
+                        {token.content}
+                      </Text>
+                    ))}
+                  </View>
                 </View>
               );
             })}
-
           </View>
         </View>
       </ScrollView>

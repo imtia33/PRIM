@@ -24,8 +24,10 @@ export const lightTheme={
     accent: 'hsl(165, 96%, 71%)',
     accent2: 'hsl(165, 96%, 71%)',
     buttonText: 'hsl(160, 8%, 6%)', // dark text for buttons
-    outline: 'hsla(210, 11%, 15%, 0.08)'
+    outline: 'hsla(210, 11%, 15%, 0.08)',
+    inputBackground: 'hsl(0, 0%, 98%)' // light input background
 }
+
 export const darkTheme={
     mode: 'dark',
     primary: 'hsl(165, 96%, 71%)', // #78fcd6
@@ -53,5 +55,6 @@ export const darkTheme={
     accent: 'hsl(165, 96%, 71%)',
     accent2: 'hsl(165, 96%, 71%)',
     buttonText: 'hsl(160, 8%, 6%)',
-    outline: 'hsla(240, 100%, 100%, 0.08)'
+    outline: 'hsla(240, 100%, 100%, 0.08)',
+    inputBackground: 'hsl(240, 2%, 18%)' // dark input background
 }

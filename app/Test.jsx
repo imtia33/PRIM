@@ -1,102 +1,103 @@
-import React from 'react';
-import MarkdownText from '../componants/markdown/MarkdownText.web';
+import { View, Text, StyleSheet } from 'react-native'
+import React, { useState } from 'react'
+import ApiKeyModal from '../componants/modals/ApiKeyModal'
+import DocumentationModal from '../componants/modals/DocumentationModal'
+import ForgotPasswordModal from '../componants/modals/ForgotPasswordModal'
+import { useTheme } from '../context/ColorMode'
 
-// Example markdown content with various elements including Mermaid diagrams
-const exampleMarkdown = `
-# Markdown with Mermaid Diagrams
+const Test = () => {
+  const { theme } = useTheme()
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false)
+  const [showDocumentationModal, setShowDocumentationModal] = useState(false)
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false)
+  const [apiKey, setApiKey] = useState('')
+  const [repoLink, setRepoLink] = useState('')
+  const [branchName, setBranchName] = useState('')
 
-This component demonstrates rendering markdown with Mermaid diagrams using CDN libraries.
-
-## Code Block Example
-
-\`\`\`javascript
-function greet(name) {
-  return \`Hello, \${name}!\`;
+  return (
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <Text style={[styles.title, { color: theme.text }]}>Modal Test Page</Text>
+      
+      {/* Button to open API Key Modal */}
+      <View style={styles.buttonContainer}>
+        <Text 
+          style={[styles.button, { backgroundColor: theme.accent }]} 
+          onPress={() => setShowApiKeyModal(true)}
+        >
+          Open API Key Modal
+        </Text>
+      </View>
+      
+      {/* Button to open Documentation Modal */}
+      <View style={styles.buttonContainer}>
+        <Text 
+          style={[styles.button, { backgroundColor: theme.accent }]} 
+          onPress={() => setShowDocumentationModal(true)}
+        >
+          Open Documentation Modal
+        </Text>
+      </View>
+      
+      {/* Button to open Forgot Password Modal */}
+      <View style={styles.buttonContainer}>
+        <Text 
+          style={[styles.button, { backgroundColor: theme.accent }]} 
+          onPress={() => setShowForgotPasswordModal(true)}
+        >
+          Open Forgot Password Modal
+        </Text>
+      </View>
+      
+      {/* Modals */}
+      <ApiKeyModal
+        visible={showApiKeyModal}
+        onClose={() => setShowApiKeyModal(false)}
+        onSubmit={() => setShowApiKeyModal(false)}
+        apiKey={apiKey}
+        setApiKey={setApiKey}
+      />
+      
+      <DocumentationModal
+        visible={showDocumentationModal}
+        onClose={() => setShowDocumentationModal(false)}
+        onSubmit={() => setShowDocumentationModal(false)}
+        repoLink={repoLink}
+        setRepoLink={setRepoLink}
+        branchName={branchName}
+        setBranchName={setBranchName}
+      />
+      
+      <ForgotPasswordModal
+        visible={showForgotPasswordModal}
+        onClose={() => setShowForgotPasswordModal(false)}
+      />
+    </View>
+  )
 }
 
-console.log(greet("World"));
-\`\`\`
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 30,
+  },
+  buttonContainer: {
+    marginVertical: 10,
+  },
+  button: {
+    padding: 15,
+    borderRadius: 8,
+    textAlign: 'center',
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+})
 
-## Flowchart Diagram
-
-\`\`\`mermaid
-flowchart TD
-  A[Start] --> B{Is it working?}
-  B -->|Yes| C[Ship it 🚀]
-  B -->|No| D[Fix it 🔧]
-  D --> B
-\`\`\`
-
-## Sequence Diagram
-
-\`\`\`mermaid
-sequenceDiagram
-  participant User
-  participant App
-  participant Server
-
-  User->>App: Open app
-  App->>Server: Request data
-  Server-->>App: Send response
-  App-->>User: Display results
-\`\`\`
-
-## Class Diagram
-
-\`\`\`mermaid
-classDiagram
-  class Animal {
-    +String name
-    +eat()
-    +sleep()
-  }
-
-  class Dog {
-    +bark()
-  }
-
-  Animal <|-- Dog
-\`\`\`
-
-## State Diagram
-
-\`\`\`mermaid
-stateDiagram-v2
-  [*] --> Idle
-  Idle --> Loading : Start
-  Loading --> Success : Done
-  Loading --> Error : Fail
-  Success --> [*]
-  Error --> Idle
-\`\`\`
-
-## Pie Chart
-
-\`\`\`mermaid
-pie showData
-  title Project Contributions
-  "Frontend" : 40
-  "Backend" : 35
-  "DevOps" : 25
-\`\`\`
-
----
-
-Try editing this markdown to see how the component renders different elements!
-`;
-
-const MarkdownTextExample = () => {
-  return (
-    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <h1>MarkdownText Component Example</h1>
-      <p>This example shows how to use the MarkdownText component with various markdown elements including Mermaid diagrams.</p>
-      
-      <div className='max-h-full' style={{ marginTop: '20px', overflowY: 'auto' ,maxHeight:'1000px'}}>
-        <MarkdownText markdown={exampleMarkdown} />
-      </div>
-        
-    </div>
-  );
-};
-
-export default MarkdownTextExample;
+export default Test

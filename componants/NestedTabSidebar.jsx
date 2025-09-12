@@ -2,7 +2,7 @@
 import { View, Text, TouchableOpacity, Animated, useWindowDimensions, Platform, TouchableNativeFeedback } from "react-native"
 import React, { useRef, useState, useContext, useEffect } from "react"
 import { TabBarContext } from "../context/TabBarContext"
-import { useTheme } from "../context/ColorMode"
+import { useTheme } from "../context/ColorMode.js"
 import ThemeChanger from "./ThemeChanger"
 import { Home, User, Star, Compass, Search, Code, Settings, GitBranch, Eye, Users, GitPullRequest } from 'lucide-react-native'
 

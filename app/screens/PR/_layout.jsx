@@ -3,7 +3,7 @@ import { View, useWindowDimensions } from "react-native"
 import React from "react"
 import { useTheme } from "../../../context/ColorMode"
 import NestedTabSidebar from "../../../componants/NestedTabSidebar"
-import { Home, User, Star, GitPullRequest, Settings, Search, Compass } from 'lucide-react-native'
+import { Home, User, Star, GitPullRequest, Settings, Search, Compass, FileText } from 'lucide-react-native'
 
 export default function PRLayout() {
   const { width } = useWindowDimensions()

@@ -1,4 +1,4 @@
-import { token } from './appwrite';
+import { token, loadIdentities } from './appwrite';
 
 let cachedUserData = null;
 let cachedEtag = null;
@@ -24,8 +24,13 @@ export const isTokenValid = () => {
 
 // Wrapper function for GitHub API calls that tracks usage
 export const githubApiCall = async (endpoint, options = {}) => {
+  // Ensure token is loaded
   if (!token) {
-    return null;
+    await loadIdentities();
+  }
+  
+  if (!token) {
+    throw new Error('GitHub token not available. Please link your GitHub account.');
   }
 
   const headers = {
@@ -209,37 +214,75 @@ export async function fetchGitHubRateLimit(options = {}) {
 // Function to fetch PR data from GitHub
 export const fetchPRData = async (owner, repo, prNumber) => {
   try {
-    // Fetch PR details (without token for public repos)
-    const prResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`, {
-      headers: {
-        'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'PR-Review-Tool',
-        // Add authorization header if token is available
-        ...(token && { 'Authorization': `Bearer ${token}` })
+    console.log(`Fetching PR data for: ${owner}/${repo}#${prNumber}`);
+    
+    // Try to load GitHub token
+    let localToken = token; // Use the imported token
+    if (!localToken) {
+      await loadIdentities();
+      // Re-import to get the updated token
+      try {
+        const appwriteModule = await import('./appwrite');
+        localToken = appwriteModule.token;
+      } catch (e) {
+        console.log('Could not access token from appwrite module');
       }
+    }
+    
+    console.log('GitHub token status:', localToken ? 'Available' : 'Not available');
+    
+    // Fetch PR details
+    const headers = {
+      'Accept': 'application/vnd.github.v3+json',
+      'User-Agent': 'PRIM-PR-Review-Tool'
+    };
+    
+    // Add authorization header if token is available
+    if (localToken) {
+      headers['Authorization'] = `Bearer ${localToken}`;
+    }
+    
+    const prResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`, {
+      headers
     });
     
+    console.log(`PR metadata response status: ${prResponse.status}`);
+    
     if (!prResponse.ok) {
-      throw new Error(`GitHub API error: ${prResponse.status} - ${prResponse.statusText}`);
+      const errorText = await prResponse.text();
+      console.error(`GitHub API error for PR metadata: ${prResponse.status} - ${prResponse.statusText} - ${errorText}`);
+      throw new Error(`GitHub API error: ${prResponse.status} - ${prResponse.statusText} - ${errorText}`);
     }
     
     const prData = await prResponse.json();
+    console.log('PR metadata fetched successfully');
     
     // Fetch PR diff
+    console.log('Fetching PR diff...');
+    const diffHeaders = {
+      'Accept': 'application/vnd.github.v3.diff',
+      'User-Agent': 'PRIM-PR-Review-Tool'
+    };
+    
+    // Add authorization header if token is available
+    if (localToken) {
+      diffHeaders['Authorization'] = `Bearer ${localToken}`;
+    }
+    
     const diffResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`, {
-      headers: {
-        'Accept': 'application/vnd.github.v3.diff',
-        'User-Agent': 'PR-Review-Tool',
-        // Add authorization header if token is available
-        ...(token && { 'Authorization': `Bearer ${token}` })
-      }
+      headers: diffHeaders
     });
     
+    console.log(`PR diff response status: ${diffResponse.status}`);
+    
     if (!diffResponse.ok) {
-      throw new Error(`GitHub API error: ${diffResponse.status} - ${diffResponse.statusText}`);
+      const errorText = await diffResponse.text();
+      console.error(`GitHub API error for diff: ${diffResponse.status} - ${diffResponse.statusText} - ${errorText}`);
+      throw new Error(`GitHub API error: ${diffResponse.status} - ${diffResponse.statusText} - ${errorText}`);
     }
     
     const diff = await diffResponse.text();
+    console.log('PR diff fetched successfully');
     
     return {
       title: prData.title,

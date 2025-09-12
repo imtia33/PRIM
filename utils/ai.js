@@ -1,304 +1,6 @@
-import { githubApiCall } from './github';
-
-// Function to extract GitHub PR information from a URL
-export const extractPRInfo = (url) => {
-  try {
-    // Handle both full URLs and short URLs
-    const fullUrl = url.startsWith('http') ? url : `https://github.com/${url}`;
-    const prUrl = new URL(fullUrl);
-    
-    // Check if it's a GitHub URL
-    if (prUrl.hostname !== 'github.com') {
-      return null;
-    }
-    
-    const pathParts = prUrl.pathname.split('/').filter(part => part);
-    
-    // Expected format: /{owner}/{repo}/pull/{prNumber}
-    if (pathParts.length >= 4 && pathParts[2] === 'pull') {
-      const owner = pathParts[0];
-      const repo = pathParts[1];
-      const prNumber = pathParts[3];
-      
-      // Validate that prNumber is actually a number
-      if (isNaN(parseInt(prNumber))) {
-        return null;
-      }
-      
-      return { owner, repo, prNumber };
-    }
-    
-    return null;
-  } catch (error) {
-    console.error('Error parsing PR URL:', error);
-    return null;
-  }
-};
-
-// Function to fetch PR data from GitHub
-export const fetchPRData = async (owner, repo, prNumber) => {
-  try {
-    // Try to load GitHub token
-    let token = null;
-    try {
-      // Dynamically import to avoid circular dependencies
-      const appwriteModule = await import('./appwrite');
-      const { loadIdentities } = appwriteModule;
-      
-      // If we don't have a token, try to load it
-      if (!appwriteModule.token) {
-        await loadIdentities();
-        // Get the token again after loading
-        token = appwriteModule.token;
-      } else {
-        token = appwriteModule.token;
-      }
-    } catch (e) {
-      // If we can't load the token module, that's fine - we'll proceed without auth
-      console.log('Could not load GitHub token, proceeding without authentication');
-    }
-    
-    // Fetch PR details
-    const headers = {
-      'Accept': 'application/vnd.github.v3+json',
-      'User-Agent': 'PRIM-PR-Review-Tool'
-    };
-    
-    // Add authorization header if token is available
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    const prResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`, {
-      headers
-    });
-    
-    if (!prResponse.ok) {
-      const errorText = await prResponse.text();
-      throw new Error(`GitHub API error: ${prResponse.status} - ${prResponse.statusText} - ${errorText}`);
-    }
-    
-    const prData = await prResponse.json();
-    
-    // Fetch PR diff
-    const diffHeaders = {
-      'Accept': 'application/vnd.github.v3.diff',
-      'User-Agent': 'PRIM-PR-Review-Tool'
-    };
-    
-    // Add authorization header if token is available
-    if (token) {
-      diffHeaders['Authorization'] = `Bearer ${token}`;
-    }
-    
-    const diffResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`, {
-      headers: diffHeaders
-    });
-    
-    if (!diffResponse.ok) {
-      const errorText = await diffResponse.text();
-      throw new Error(`GitHub API error: ${diffResponse.status} - ${diffResponse.statusText} - ${errorText}`);
-    }
-    
-    const diff = await diffResponse.text();
-    
-    return {
-      title: prData.title,
-      description: prData.body || "No description",
-      author: prData.user?.login,
-      diff,
-    };
-  } catch (error) {
-    console.error('Error fetching PR data:', error);
-    throw error;
-  }
-};
-
-// Function to generate AI prompt for PR review
-export const generatePRReviewPrompt = (prData) => {
-  return `
-You are a senior engineer with 20+ years experience reviewing PRs.  
-The author is experienced — skip basics, summaries, or politeness.  
-
-Instructions:
-- Be **direct, concise, and surgical**. Every comment should matter.
-- Identify code smells, unnecessary complexity, unsafe patterns, unclear naming.
-- Whenever you see something that can be improved, ask:
-   we could do this:
-  (show a short code snippet with an alternative)
-- Show alternatives as **inline diffs or minimal working snippets** if and only if they will be efficient significantly, no need for this if the improvement is not worth another commit.
-- Ask tough questions about redundancy, performance, safety, or race conditions.
-- Avoid filler, summaries, or explanations — focus only on actionable critique.
-- Format suggestions in Markdown code blocks; keep questions outside code blocks.
-- remember you are here to provide helpful feedback, not a replacement for a code review.
--you need to be suggestive in tone instead of commanding.
--you are the friend of the PR author.
--keep the talking short and concise. maintain your Senior dignity instead if just going on and on like a beginner.
--if the code is good enough , there is no need for suggestions on that part.
--if its possible run some tests on the code to see if it works or not on some edge cases.
-show the test that failed in and show as collapsable section.
-
-PR Title: ${prData.title}  
-Author: ${prData.author}  
-Description: ${prData.description}
-
-PR Diff:
-\`\`\`diff
-${prData.diff}
-\`\`\`
-
-Generate the review **as if you are leaving inline GitHub comments**. 
-Use Markdown for code snippets, questions, and diffs. Keep it concise.
-`.trim();
-};
-
 /**
- * Fetches the latest commit SHA for a given branch
- * @param {string} owner - Repository owner
- * @param {string} repo - Repository name
- * @param {string} branch - Branch name
- * @returns {Promise<string>} - Latest commit SHA
+ * AI utility functions
  */
-export const fetchLatestCommitSHA = async (owner, repo, branch) => {
-  // Try to load GitHub token
-  let token = null;
-  try {
-    // Dynamically import to avoid circular dependencies
-    const appwriteModule = await import('./appwrite');
-    const { loadIdentities } = appwriteModule;
-    
-    // If we don't have a token, try to load it
-    if (!appwriteModule.token) {
-      await loadIdentities();
-      // Get the token again after loading
-      token = appwriteModule.token;
-    } else {
-      token = appwriteModule.token;
-    }
-  } catch (e) {
-    // If we can't load the token module, that's fine - we'll proceed without auth
-    console.log('Could not load GitHub token, proceeding without authentication');
-  }
-  
-  const headers = {
-    'Accept': 'application/vnd.github.v3+json',
-    'User-Agent': 'PRIM-Documentation-Tool'
-  };
-  
-  // Add authorization header if token is available
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  
-  const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/branches/${branch}`, {
-    headers
-  });
-  
-  if (!response.ok) {
-    throw new Error(`GitHub API error: ${response.status} - ${response.statusText}`);
-  }
-  
-  const data = await response.json();
-  return data.commit.sha;
-};
-
-/**
- * Fetches the diff content for a specific commit
- * @param {string} owner - Repository owner
- * @param {string} repo - Repository name
- * @param {string} commitSHA - Commit SHA
- * @returns {Promise<string>} - Diff content
- */
-export const fetchCommitDiff = async (owner, repo, commitSHA) => {
-  // Try to load GitHub token
-  let token = null;
-  try {
-    // Dynamically import to avoid circular dependencies
-    const appwriteModule = await import('./appwrite');
-    const { loadIdentities } = appwriteModule;
-    
-    // If we don't have a token, try to load it
-    if (!appwriteModule.token) {
-      await loadIdentities();
-      // Get the token again after loading
-      token = appwriteModule.token;
-    } else {
-      token = appwriteModule.token;
-    }
-  } catch (e) {
-    // If we can't load the token module, that's fine - we'll proceed without auth
-    console.log('Could not load GitHub token, proceeding without authentication');
-  }
-  
-  const headers = {
-    'Accept': 'application/vnd.github.v3.diff',
-    'User-Agent': 'PRIM-Documentation-Tool'
-  };
-  
-  // Add authorization header if token is available
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  
-  const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits/${commitSHA}`, {
-    headers
-  });
-  
-  if (!response.ok) {
-    throw new Error(`GitHub API error: ${response.status} - ${response.statusText}`);
-  }
-  
-  return await response.text();
-};
-
-/**
- * Fetches commit details including message
- * @param {string} owner - Repository owner
- * @param {string} repo - Repository name
- * @param {string} commitSHA - Commit SHA
- * @returns {Promise<Object>} - Commit details
- */
-export const fetchCommitDetails = async (owner, repo, commitSHA) => {
-  // Try to load GitHub token
-  let token = null;
-  try {
-    // Dynamically import to avoid circular dependencies
-    const appwriteModule = await import('./appwrite');
-    const { loadIdentities } = appwriteModule;
-    
-    // If we don't have a token, try to load it
-    if (!appwriteModule.token) {
-      await loadIdentities();
-      // Get the token again after loading
-      token = appwriteModule.token;
-    } else {
-      token = appwriteModule.token;
-    }
-  } catch (e) {
-    // If we can't load the token module, that's fine - we'll proceed without auth
-    console.log('Could not load GitHub token, proceeding without authentication');
-  }
-  
-  const headers = {
-    'Accept': 'application/vnd.github.v3+json',
-    'User-Agent': 'PRIM-Documentation-Tool'
-  };
-  
-  // Add authorization header if token is available
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  
-  const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits/${commitSHA}`, {
-    headers
-  });
-  
-  if (!response.ok) {
-    throw new Error(`GitHub API error: ${response.status} - ${response.statusText}`);
-  }
-  
-  return await response.json();
-};
 
 /**
  * Generates documentation using AI service
@@ -340,8 +42,52 @@ export const generateDocumentation = async (prompt, apiKey) => {
   return result?.candidates?.[0]?.content?.parts?.[0]?.text || null;
 };
 
-// AI Chat Service
-class AIChatService {
+/**
+ * Generates a prompt for PR review
+ * @param {Object} prData - PR data object
+ * @returns {string} - Generated prompt
+ */
+export const generatePRReviewPrompt = (prData) => {
+  return `
+You are a senior engineer with 20+ years experience reviewing PRs.  
+The author is experienced — skip basics, summaries, or politeness.  
+
+Instructions:
+- Be **direct, concise, and surgical**. Every comment should matter.
+- Identify code smells, unnecessary complexity, unsafe patterns, unclear naming.
+- Whenever you see something that can be improved, ask:
+   we could do this:
+  (show a short code snippet with an alternative)
+- Show alternatives as **inline diffs or minimal working snippets** if and only if they will be efficient significantly, no need for this if the improvement is not worth another commit.
+- Ask tough questions about redundancy, performance, safety, or race conditions.
+- Avoid filler, summaries, or explanations — focus only on actionable critique.
+- Format suggestions in Markdown code blocks; keep questions outside code blocks.
+- remember you are here to provide helpful feedback, not a replacement for a code review.
+-you need to be suggestive in tone instead of commanding.
+-you are the friend of the PR author.
+-keep the talking short and concise. maintain your Senior dignity instead if just going on and on like a beginner.
+-if the code is good enough , there is no need for suggestions on that part.
+-if its possible run some tests on the code to see if it works or not on some edge cases.
+show the test that failed in and show as collapsable section.
+
+PR Title: ${prData.title}  
+Author: ${prData.author}  
+Description: ${prData.description}
+
+PR Diff:
+\`\`\`diff
+${prData.diff}
+\`\`\`
+
+Generate the review **as if you are leaving inline GitHub comments**. 
+Use Markdown for code snippets, questions, and diffs. Keep it concise.
+`.trim();
+};
+
+/**
+ * AI Chat Service
+ */
+export class AIChatService {
   constructor(apiKey) {
     // Validate that API key is provided
     if (!apiKey) {
@@ -412,7 +158,7 @@ class AIChatService {
         useTools = true;
         break;
       case 'documentation':
-        systemPrompt = "You are a professional technical writer and software documentation expert. You have just generated comprehensive documentation for a GitHub repository. Your goal is to help users understand, modify, and improve this documentation. Always reference the documentation content when answering questions. Provide clear, concise responses using proper markdown formatting. Do not provide sections to copy - provide direct markdown with appropriate headings, lists, code blocks, and other markdown elements.";
+        systemPrompt = "You are a professional technical writer. Your goal is to provide well-structured documentation using proper markdown formatting. Always respond with direct markdown that can be rendered immediately. Do not provide sections to copy - provide direct markdown with appropriate headings, lists, code blocks, and other markdown elements. Use clear, concise language and organize information logically.";
         useTools = true;
         break;
       case 'web-browsing':
@@ -613,3 +359,61 @@ export const getAIReview = async (prData, apiKey) => {
     throw error;
   }
 };
+
+// Function to extract GitHub PR information from a URL
+export const extractPRInfo = (url) => {
+  try {
+    const prUrl = new URL(url);
+    const pathParts = prUrl.pathname.split('/').filter(part => part);
+    
+    // Expected format: /repos/{owner}/{repo}/pull/{prNumber}
+    if (pathParts.length >= 4 && pathParts[2] === 'pull') {
+      const owner = pathParts[0];
+      const repo = pathParts[1];
+      const prNumber = pathParts[3];
+      
+      return { owner, repo, prNumber };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error parsing PR URL:', error);
+    return null;
+  }
+};
+
+// Function to fetch PR data from GitHub
+export const fetchPRData = async (owner, repo, prNumber) => {
+  try {
+    // Fetch PR details
+    const prData = await githubApiCall(`/repos/${owner}/${repo}/pulls/${prNumber}`);
+    
+    // Fetch PR diff
+    const diffResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`, {
+      headers: {
+        'Authorization': `Bearer ${process.env.GITHUB_TOKEN || ''}`,
+        'Accept': 'application/vnd.github.v3.diff',
+        'User-Agent': 'pr-reviewer'
+      }
+    });
+    
+    if (!diffResponse.ok) {
+      throw new Error(`GitHub API error: ${diffResponse.status}`);
+    }
+    
+    const diff = await diffResponse.text();
+    
+    return {
+      title: prData.title,
+      description: prData.body || "No description",
+      author: prData.user?.login,
+      diff,
+    };
+  } catch (error) {
+    console.error('Error fetching PR data:', error);
+    throw error;
+  }
+};
+
+// Import githubApiCall function
+import { githubApiCall } from './github';

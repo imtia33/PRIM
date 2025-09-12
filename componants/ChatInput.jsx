@@ -14,8 +14,13 @@ const ChatInterface = ({ onSendMessage, onModeChange, currentMode }) => {
 
   // Update activeMode when currentMode prop changes
   useEffect(() => {
-    // Map 'pr-review' to 'pr' for the ChatInput component
-    const mappedMode = currentMode === 'pr-review' ? 'pr' : currentMode;
+    // Map modes for the ChatInput component
+    let mappedMode = currentMode;
+    if (currentMode === 'pr-review') {
+      mappedMode = 'pr';
+    } else if (currentMode === 'documentation') {
+      mappedMode = 'doc';
+    }
     setActiveMode(mappedMode || null);
   }, [currentMode]);
 
@@ -151,8 +156,13 @@ const ChatInterface = ({ onSendMessage, onModeChange, currentMode }) => {
       setActiveMode(mode);
       // Notify parent component of mode change
       if (onModeChange) {
-        // Map 'pr' to 'pr-review' to match the Test component
-        const modeToPass = mode === 'pr' ? 'pr-review' : mode;
+        // Map modes to match the Test component
+        let modeToPass = mode;
+        if (mode === 'pr') {
+          modeToPass = 'pr-review';
+        } else if (mode === 'doc') {
+          modeToPass = 'documentation';
+        }
         onModeChange(modeToPass);
       }
     }
@@ -161,13 +171,6 @@ const ChatInterface = ({ onSendMessage, onModeChange, currentMode }) => {
   const getModeClass = (mode) => {
     const baseClasses = "action-button px-4 py-2 rounded-full text-sm font-medium cursor-pointer transition-colors duration-200 bg-transparent border-none flex items-center gap-1";
     const isActive = activeMode === mode;
-    
-    // Special handling for documentation mode (disabled)
-    if (mode === 'doc') {
-      return `${baseClasses}` + (theme.mode === 'dark' ? 
-        ' text-gray-600 cursor-not-allowed' : 
-        ' text-gray-400 cursor-not-allowed');
-    }
     
     if (isActive) {
       return `${baseClasses}` + (theme.mode === 'dark' ? 
@@ -185,7 +188,7 @@ const ChatInterface = ({ onSendMessage, onModeChange, currentMode }) => {
       <div 
         id="chat-container" 
         ref={chatContainerRef}
-        className="w-full rounded-[1.5rem] p-4 pt-2 flex flex-col gap-0.5 border max-h-[200px] transition-[max-height] duration-300 ease-in-out mb-2"
+        className="w-full rounded-[1.5rem] p-3 pt-3 flex flex-col gap-0.5 border max-h-[200px] transition-[max-height] duration-300 ease-in-out mb-4"
         style={{ 
           backgroundColor: theme.mode === 'dark' ? '#1b1c1d' : theme.cardBackground,
           borderColor: theme.borderColor,
@@ -257,7 +260,7 @@ const ChatInterface = ({ onSendMessage, onModeChange, currentMode }) => {
         <div 
           id="input-container" 
           ref={inputContainerRef}
-          className="rounded-2xl flex items-end px-2 py-1.5 relative transition-[height] duration-200 ease-in-out"
+          className="rounded-2xl flex items-end px-1 py-1 relative transition-[height] duration-200 ease-in-out"
           style={{ backgroundColor: theme.mode === 'dark' ? '#1b1c1d' : theme.cardBackground }}
         >
           <div className="flex-grow py-0 relative">
@@ -266,11 +269,15 @@ const ChatInterface = ({ onSendMessage, onModeChange, currentMode }) => {
               id="editor"
               className="ql-editor outline-none border-none w-full min-h-[24px] max-h-20 whitespace-pre-wrap overflow-y-auto"
               contentEditable="true"
-              data-placeholder="Just PRIM it..."
+              data-placeholder={activeMode === 'pr' ? "Paste GitHub PR link or describe what to review..." : 
+                              activeMode === 'doc' ? "Enter repo info (owner/repo) or GitHub link..." : 
+                              "Just PRIM it..."}
               style={{ 
-                wordBreak: 'break-all',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
                 color: theme.text,
-                backgroundColor: theme.mode === 'dark' ? '#1b1c1d' : theme.cardBackground
+                backgroundColor: theme.mode === 'dark' ? '#1b1c1d' : theme.cardBackground,
+                lineHeight: '1.5',
               }}
               onInput={handleInput}
               onKeyDown={handleKeyDown}
@@ -278,8 +285,8 @@ const ChatInterface = ({ onSendMessage, onModeChange, currentMode }) => {
           </div>
         </div>
 
-        <div className="flex justify-between items-center">
-          <div className="mode-buttons flex gap-2">
+        <div className="flex justify-between items-center mt-1">
+          <div className="mode-buttons flex gap-1">
             <button
               className={getModeClass('pr')}
               onClick={() => handleModeClick('pr')}
@@ -289,8 +296,7 @@ const ChatInterface = ({ onSendMessage, onModeChange, currentMode }) => {
             </button>
             <button
               className={getModeClass('doc')}
-              onClick={(e) => e.preventDefault()}
-              title="Coming soon"
+              onClick={() => handleModeClick('doc')}
             >
               <i className="ph-duotone ph-file-code text-lg md:text-base leading-none"></i>
               <span className="hidden md:inline">documentation</span>
@@ -299,7 +305,7 @@ const ChatInterface = ({ onSendMessage, onModeChange, currentMode }) => {
           <button
             id="send-button"
             ref={sendButtonRef}
-            className="flex justify-center items-center w-10 h-10 rounded-full transition-colors duration-200 cursor-pointer disabled:cursor-not-allowed overflow-hidden"
+            className="flex justify-center items-center w-8 h-8 rounded-full transition-colors duration-200 cursor-pointer disabled:cursor-not-allowed overflow-hidden"
             style={{ 
               backgroundColor: theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
               color: theme.text
@@ -310,7 +316,7 @@ const ChatInterface = ({ onSendMessage, onModeChange, currentMode }) => {
             <i 
               id="send-icon" 
               ref={sendIconRef}
-              className="ph-duotone ph-paper-plane-right text-lg"
+              className="ph-duotone ph-paper-plane-right text-base"
               style={{ color: theme.text }}
             ></i>
           </button>
