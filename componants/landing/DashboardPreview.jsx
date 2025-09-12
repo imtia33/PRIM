@@ -21,7 +21,7 @@ export function DashboardPreview() {
           transform: 'translateZ(0)' // Forces hardware acceleration and proper layering
         }}>
           <Image
-            source={{ uri: "/images/dashboard-preview.jpeg" }}
+            source={{ uri: "/images/dashboard-preview.png" }}
             alt="Dashboard preview"
             style={{
               width: imageWidth,

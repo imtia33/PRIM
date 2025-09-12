@@ -9,29 +9,7 @@ export function FooterSection() {
           <div className="text-center text-foreground text-xl font-semibold leading-4">PRIM</div>
         </div>
         <p className="text-foreground/90 text-sm font-medium leading-[18px] text-left">Contribution made effortless</p>
-        <div className="flex justify-start items-start gap-3">
-          <a
-            href="https://twitter.com/primlabs"
-            aria-label="Twitter"
-            className="w-4 h-4 flex items-center justify-center"
-          >
-            <Twitter className="w-full h-full text-muted-foreground" />
-          </a>
-          <a
-            href="https://github.com/primlabs"
-            aria-label="GitHub"
-            className="w-4 h-4 flex items-center justify-center"
-          >
-            <Github className="w-full h-full text-muted-foreground" />
-          </a>
-          <a
-            href="https://linkedin.com/company/primlabs"
-            aria-label="LinkedIn"
-            className="w-4 h-4 flex items-center justify-center"
-          >
-            <Linkedin className="w-full h-full text-muted-foreground" />
-          </a>
-        </div>
+        
       </div>
     </footer>
   )
