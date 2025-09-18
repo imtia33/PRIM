@@ -1,9 +1,9 @@
 "use client"
 
 import { router, Tabs } from "expo-router"
-import { View, Text, Platform, Animated, Easing, useWindowDimensions } from "react-native"
+import { View, Text, Platform, Animated, Easing, useWindowDimensions, TextInput } from "react-native"
 import { TouchableOpacity } from "react-native"
-import { GitPullRequest, Settings, LogIn, LogOut, ArrowLeft, Code } from 'lucide-react-native'
+import { GitPullRequest, Settings, LogIn, LogOut, ArrowLeft, Code, Key } from 'lucide-react-native'
 import { useRef, useState, useEffect, useContext } from "react"
 import { TabBarContext } from "../../context/TabBarContext"
 import { useTheme } from "../../context/ColorMode"
@@ -11,6 +11,7 @@ import ThemeChanger from "../../componants/ThemeChanger"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useAppwriteContext } from "../../context/appwriteContext"
 import { login,logout } from "../../backend/appwrite"
+import AsyncStorage from "@react-native-async-storage/async-storage"
 
 function MainNavBar({ state, descriptors, navigation, onHover, prDisabled }) {
   const { theme, toggleTheme } = useTheme();
@@ -19,6 +20,39 @@ function MainNavBar({ state, descriptors, navigation, onHover, prDisabled }) {
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const { showTabBar } = useContext(TabBarContext);
   const { isLogged,setIsLogged,setUser } = useAppwriteContext();
+
+  // Theme colors (simplified)
+  const colors = theme.mode === "dark"
+    ? {
+        card: "rgb(7, 12, 21)",
+        cardForeground: "#f1f5f9",
+        border: "#1e293b",
+        primary: "#15803d",
+        primaryForeground: "#fef2f2",
+      }
+    : {
+        card: "#fff",
+        cardForeground: "#0f172a",
+        border: "#e2e8f0",
+        primary: "#22c55e",
+        primaryForeground: "#052e16",
+      };
+
+  // Load API key on component mount
+  useEffect(() => {
+    const loadApiKey = async () => {
+      try {
+        const storedApiKey = await AsyncStorage.getItem("gemini_api_key");
+        if (storedApiKey) {
+          setApiKey(storedApiKey);
+        }
+      } catch (error) {
+        console.error("Failed to load API key", error);
+      }
+    };
+    
+    loadApiKey();
+  }, []);
 
   const scaleAnims = useRef(state.routes.map(() => new Animated.Value(1))).current;
   const borderRadiusAnims = useRef(state.routes.map(() => new Animated.Value(24))).current;
@@ -154,6 +188,22 @@ function MainNavBar({ state, descriptors, navigation, onHover, prDisabled }) {
       }
     }
   }
+
+  const handleApiKeySave = async () => {
+    try {
+      await AsyncStorage.setItem("gemini_api_key", tempApiKey);
+      setApiKey(tempApiKey);
+      setTempApiKey("");
+      setShowApiKeyModal(false);
+    } catch (error) {
+      console.error("Failed to save API key", error);
+    }
+  };
+
+  const handleApiKeyCancel = () => {
+    setTempApiKey("");
+    setShowApiKeyModal(false);
+  };
 
   return (
     <Animated.View
@@ -330,8 +380,9 @@ function MainNavBar({ state, descriptors, navigation, onHover, prDisabled }) {
         {/* Add login icon at the bottom of the bar */}
         <View style={{ flex: 1 }} />
         <View style={{ marginBottom: 20, alignItems: "center", justifyContent: "flex-end" }}>
-         <TouchableOpacity
-         onPress={handleLoginLogout}
+          {/* Login/Logout Button */}
+          <TouchableOpacity
+          onPress={handleLoginLogout}
             style={{
               width: isDesktop ? 44 : 48,
               height: isDesktop ? 44 : 48,

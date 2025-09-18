@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTheme } from '../context/ColorMode';
 
-const ChatInterface = ({ onSendMessage, onModeChange, currentMode }) => {
+const ChatInterface = ({ onSendMessage, onModeChange, currentMode, disabled, placeholder }) => {
   const { theme } = useTheme();
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -43,6 +43,9 @@ const ChatInterface = ({ onSendMessage, onModeChange, currentMode }) => {
   }, []);
 
   const handleInput = (e) => {
+    // If disabled, prevent input
+    if (disabled) return;
+    
     const text = e.target.textContent;
     setMessage(text);
     
@@ -71,6 +74,9 @@ const ChatInterface = ({ onSendMessage, onModeChange, currentMode }) => {
   };
 
   const handleKeyDown = (e) => {
+    // If disabled, prevent input
+    if (disabled) return;
+    
     const isSmallScreen = window.innerWidth < 768;
 
     if (e.key === 'Enter') {
@@ -86,6 +92,9 @@ const ChatInterface = ({ onSendMessage, onModeChange, currentMode }) => {
   };
 
   const handleSend = () => {
+    // If disabled, prevent sending
+    if (disabled) return;
+    
     if (!message.trim()) return;
     
     // For PR mode, check if message contains a GitHub PR link
@@ -146,6 +155,9 @@ const ChatInterface = ({ onSendMessage, onModeChange, currentMode }) => {
   };
 
   const handleModeClick = (mode) => {
+    // If disabled, prevent mode changes
+    if (disabled) return;
+    
     if (activeMode === mode) {
       setActiveMode(null);
       // Notify parent component of mode change
@@ -171,6 +183,13 @@ const ChatInterface = ({ onSendMessage, onModeChange, currentMode }) => {
   const getModeClass = (mode) => {
     const baseClasses = "action-button px-4 py-2 rounded-full text-sm font-medium cursor-pointer transition-colors duration-200 bg-transparent border-none flex items-center gap-1";
     const isActive = activeMode === mode;
+    
+    // If disabled, add disabled styling
+    if (disabled) {
+      return `${baseClasses}` + (theme.mode === 'dark' ? 
+        ' text-gray-600 cursor-not-allowed' : 
+        ' text-gray-400 cursor-not-allowed');
+    }
     
     if (isActive) {
       return `${baseClasses}` + (theme.mode === 'dark' ? 
@@ -268,16 +287,19 @@ const ChatInterface = ({ onSendMessage, onModeChange, currentMode }) => {
               ref={editorRef}
               id="editor"
               className="ql-editor outline-none border-none w-full min-h-[24px] max-h-20 whitespace-pre-wrap overflow-y-auto"
-              contentEditable="true"
-              data-placeholder={activeMode === 'pr' ? "Paste GitHub PR link or describe what to review..." : 
+              contentEditable={!disabled} // Disable content editing when disabled
+              data-placeholder={placeholder || (activeMode === 'pr' ? "Paste GitHub PR link or describe what to review..." : 
                               activeMode === 'doc' ? "Enter repo info (owner/repo) or GitHub link..." : 
-                              "Just PRIM it..."}
+                              "Just PRIM it...")}
               style={{ 
                 wordBreak: 'break-word',
                 overflowWrap: 'break-word',
                 color: theme.text,
                 backgroundColor: theme.mode === 'dark' ? '#1b1c1d' : theme.cardBackground,
                 lineHeight: '1.5',
+                // Add disabled styling
+                opacity: disabled ? 0.5 : 1,
+                cursor: disabled ? 'not-allowed' : 'text'
               }}
               onInput={handleInput}
               onKeyDown={handleKeyDown}
@@ -290,6 +312,7 @@ const ChatInterface = ({ onSendMessage, onModeChange, currentMode }) => {
             <button
               className={getModeClass('pr')}
               onClick={() => handleModeClick('pr')}
+              disabled={disabled} // Disable button when disabled
             >
               <i className="ph-duotone ph-git-pull-request text-lg md:text-base leading-none"></i>
               <span className="hidden md:inline">PR review</span>
@@ -297,6 +320,7 @@ const ChatInterface = ({ onSendMessage, onModeChange, currentMode }) => {
             <button
               className={getModeClass('doc')}
               onClick={() => handleModeClick('doc')}
+              disabled={disabled} // Disable button when disabled
             >
               <i className="ph-duotone ph-file-code text-lg md:text-base leading-none"></i>
               <span className="hidden md:inline">documentation</span>
@@ -308,9 +332,12 @@ const ChatInterface = ({ onSendMessage, onModeChange, currentMode }) => {
             className="flex justify-center items-center w-8 h-8 rounded-full transition-colors duration-200 cursor-pointer disabled:cursor-not-allowed overflow-hidden"
             style={{ 
               backgroundColor: theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-              color: theme.text
+              color: theme.text,
+              // Add disabled styling
+              opacity: disabled ? 0.5 : 1,
+              cursor: disabled ? 'not-allowed' : 'pointer'
             }}
-            disabled={!message.trim()}
+            disabled={disabled || !message.trim()} // Disable when disabled or no message
             onClick={handleSend}
           >
             <i 

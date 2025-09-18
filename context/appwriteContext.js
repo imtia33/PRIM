@@ -2,10 +2,12 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 
 import { getCurrentUser, loadIdentities, refreshToken, token } from "../backend/appwrite";
 import { fetchAndLogGithubUser, fetchGitHubRateLimit, setApiUsageTracker } from "../backend/github";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const AppwriteContext = createContext();
 export const useAppwriteContext = () => useContext(AppwriteContext);
 
+const GEMINI_API_KEY = "gemini_api_key";
 
 const GlobalProvider = ({ children }) => {
   const [isLogged, setIsLogged] = useState(false);
@@ -17,12 +19,46 @@ const GlobalProvider = ({ children }) => {
   const [gitUserInfo, setGitUserInfo] = useState(null);
   const [gitRateLimit, setGitRateLimit] = useState(null);
   
+  // Global API key state
+  const [apiKey, setApiKey] = useState(null);
+  
   // Global API usage tracker
   const [apiUsageCount, setApiUsageCount] = useState(0);
   const [lastApiCall, setLastApiCall] = useState(null);
   
   // Showcase cache for efficient navigation
   const [showcaseCache, setShowcaseCache] = useState(new Map());
+
+  // Load API key on app start
+  useEffect(() => {
+    const loadApiKey = async () => {
+      try {
+        const storedApiKey = await AsyncStorage.getItem(GEMINI_API_KEY);
+        if (storedApiKey) {
+          setApiKey(storedApiKey);
+        }
+      } catch (error) {
+        console.error("Failed to load API key", error);
+      }
+    };
+    
+    loadApiKey();
+  }, []);
+
+  // Function to update API key globally
+  const updateApiKey = async (newApiKey) => {
+    try {
+      if (newApiKey) {
+        await AsyncStorage.setItem(GEMINI_API_KEY, newApiKey);
+        setApiKey(newApiKey);
+      } else {
+        await AsyncStorage.removeItem(GEMINI_API_KEY);
+        setApiKey(null);
+      }
+    } catch (error) {
+      console.error("Failed to update API key", error);
+    }
+  };
 
   // Function to increment API usage count
   const incrementApiUsage = (count = 1) => {
@@ -303,6 +339,9 @@ const GlobalProvider = ({ children }) => {
         getCurrentApiUsage,
         refreshGithubToken,
         loadGithubProfile,
+        // API Key functions
+        apiKey,
+        updateApiKey,
         // Showcase cache functions
         getCachedShowcase,
         setCachedShowcase,
