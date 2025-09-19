@@ -54,7 +54,7 @@ function usePulseAnimation(isActive) {
 }
 
 export default function ProfileScreen() {
-  const {user, isGithubLinked, gitAccToken, tokenExpiry, gitUserInfo, gitRateLimit, getCurrentApiUsage} = useAppwriteContext()
+  const {user, isGithubLinked, gitAccToken, tokenExpiry, gitUserInfo, gitRateLimit, getCurrentApiUsage, apiKey, updateApiKey} = useAppwriteContext()
   const [githubConnected, setGithubConnected] = useState(false)
   // const [timeLeft, setTimeLeft] = useState(86400) // 24 hours in seconds
   const [apiTimeLeft, setApiTimeLeft] = useState(0)
@@ -70,8 +70,7 @@ export default function ProfileScreen() {
   })
   const [showPasswordField, setShowPasswordField] = useState(false)
   const [password, setPassword] = useState("")
-  // API Key states
-  const [apiKey, setApiKey] = useState("")
+  // API Key states (using global state now)
   const [showApiKeyInput, setShowApiKeyInput] = useState(false)
   const [tempApiKey, setTempApiKey] = useState("")
 
@@ -382,11 +381,10 @@ export default function ProfileScreen() {
     }
   }
 
-  // Handle API key save
+  // Handle API key save using global state
   const handleSaveApiKey = async () => {
     try {
-      await AsyncStorage.setItem("gemini_api_key", tempApiKey);
-      setApiKey(tempApiKey);
+      await updateApiKey(tempApiKey);
       setTempApiKey("");
       setShowApiKeyInput(false);
       setSuccessMessage('API key updated successfully!')

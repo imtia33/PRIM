@@ -4,7 +4,7 @@ import Markdown from "react-native-markdown-display";
 import CodeBlock from "./CodeBlock";
 import { useTheme } from "../../context/ColorMode";
 
-const MarkdownText = ({markdown="", style, renderMermaid = true, textStyle = {}}) => {
+const MarkdownText = ({markdown="", style, renderMermaid = true, textStyle = {}, isStreaming = false}) => {
   const { theme } = useTheme();
 
   const getMarkdownStyles = (theme) => ({
@@ -167,4 +167,12 @@ const MarkdownText = ({markdown="", style, renderMermaid = true, textStyle = {}}
   );
 };
 
-export default MarkdownText;
+export default React.memo(MarkdownText, (prevProps, nextProps) => {
+  // Custom comparison function to prevent unnecessary re-renders
+  return (
+    prevProps.markdown === nextProps.markdown &&
+    prevProps.renderMermaid === nextProps.renderMermaid &&
+    prevProps.textStyle === nextProps.textStyle &&
+    prevProps.isStreaming === nextProps.isStreaming
+  );
+});

@@ -115,40 +115,36 @@ export const fetchPRData = async (owner, repo, prNumber) => {
 };
 
 // Function to generate AI prompt for PR review
-export const generatePRReviewPrompt = (prData) => {
+export const generatePRReviewPrompt = (prData, projectContext = "") => {
   return `
 You are a senior engineer with 20+ years experience reviewing PRs.  
 The author is experienced — skip basics, summaries, or politeness.  
 
 Instructions:
 - Be **direct, concise, and surgical**. Every comment should matter.
-- Identify code smells, unnecessary complexity, unsafe patterns, unclear naming.
-- Whenever you see something that can be improved, ask:
-   we could do this:
-  (show a short code snippet with an alternative)
-- Show alternatives as **inline diffs or minimal working snippets** if and only if they will be efficient significantly, no need for this if the improvement is not worth another commit.
-- Ask tough questions about redundancy, performance, safety, or race conditions.
-- Avoid filler, summaries, or explanations — focus only on actionable critique.
-- Format suggestions in Markdown code blocks; keep questions outside code blocks.
-- remember you are here to provide helpful feedback, not a replacement for a code review.
--you need to be suggestive in tone instead of commanding.
--you are the friend of the PR author.
--keep the talking short and concise. maintain your Senior dignity instead if just going on and on like a beginner.
--if the code is good enough , there is no need for suggestions on that part.
--if its possible run some tests on the code to see if it works or not on some edge cases.
-show the test that failed in and show as collapsable section.
+- If you have suggestions, keep them to the point and constructive. And provide code in markdown with the suggestion of why your way is better .
+- If you have a new working method that will do the same for PR and will significantly increase efficiency, give the suggestive code.
+- Your review should be mainly checking for human errors, bugs, and security issues.
+- Documentation Clarity is not where you nitpick about. 
+- When suggesting workflow improvements or explaining complex processes.
+- be short conscise, no one has time to read a big review. they might get bored out and skip the review at all.
 
+## Project Context
+${projectContext || "(no extra context provided)"}
+
+---
+
+## Pull Request
 PR Title: ${prData.title}  
 Author: ${prData.author}  
 Description: ${prData.description}
 
-PR Diff:
+### PR Diff
 \`\`\`diff
 ${prData.diff}
 \`\`\`
 
-Generate the review **as if you are leaving inline GitHub comments**. 
-Use Markdown for code snippets, questions, and diffs. Keep it concise.
+Respond as if leaving **inline GitHub comments** in Markdown. Be short, precise, and constructive.
 `.trim();
 };
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   Alert,
   Modal,
@@ -17,20 +17,31 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import ChatInterface from '../../../componants/ChatInput';
 import { extractPRInfo, fetchPRData, generatePRReviewPrompt, createAIChatService, fetchLatestCommitSHA, fetchCommitDiff, fetchCommitDetails, generateDocumentation, getAIReview } from '../../../backend/ai';
 import { loadIdentities } from '../../../backend/appwrite';
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import MessageBubble from '../../../componants/MessageBubble';
 import * as Clipboard from 'expo-clipboard';
 import ApiKeyModal from '../../../componants/modals/ApiKeyModal';
 import DocumentationModal from '../../../componants/modals/DocumentationModal';
+import { useAppwriteContext } from '../../../context/appwriteContext';
 
 const GEMINI_API_KEY = "gemini_api_key";
 
 const Test = () => {
   const { width } = useWindowDimensions();
-  const { theme } = useTheme();
-  const [apiKey, setApiKey] = useState(null);
+  const { theme: originalTheme } = useTheme();
+  const { apiKey, updateApiKey } = useAppwriteContext();
+  
+  // Memoize theme object to prevent unnecessary re-renders
+  const theme = useMemo(() => originalTheme, [originalTheme.mode]);
+  
+  // Memoize isDesktop to prevent unnecessary re-renders
+  const isDesktop = useMemo(() => width >= 768, [width]);
+  
+  // Memoize message container and bubble widths
+  const messageContainerWidth = useMemo(() => isDesktop ? '70%' : '100%', [isDesktop]);
+  const messageBubbleWidth = useMemo(() => isDesktop ? '70%' : '85%', [isDesktop]);
+
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-  const [tempApiKey, setTempApiKey] = "";
+  const [tempApiKey, setTempApiKey] = useState("");
 
   const aiServiceRef = useRef(null);
   const [currentMode, setCurrentMode] = useState('chat');
@@ -46,10 +57,6 @@ const Test = () => {
 
   const scrollViewRef = useRef(null);
 
-  const isDesktop = width >= 768;
-  const messageContainerWidth = isDesktop ? '70%' : '100%';
-  const messageBubbleWidth = isDesktop ? '70%' : '85%';
-
   const modes = {
     'pr-review': { placeholder: "Provide instructions & PR link...", status: "PR Review Mode Activated." },
     'documentation': { placeholder: "Enter repo info (owner/repo@branch)...", status: "Documentation Mode Activated." },
@@ -59,36 +66,19 @@ const Test = () => {
   const initializeAIService = (key) => {
     if (key) {
       aiServiceRef.current = createAIChatService(key);
-      setApiKey(key);
     }
   };
 
-  const saveApiKey = async (key) => {
-    try {
-      await AsyncStorage.setItem(GEMINI_API_KEY, key);
-    } catch (error) {
-      console.error("Failed to save API key", error);
+  // Initialize AI service when API key changes
+  useEffect(() => {
+    if (apiKey) {
+      initializeAIService(apiKey);
     }
-  };
-
-  const loadApiKey = async () => {
-    try {
-      const storedApiKey = await AsyncStorage.getItem(GEMINI_API_KEY);
-      if (storedApiKey) {
-        initializeAIService(storedApiKey);
-      } else {
-        setShowApiKeyModal(true);
-      }
-    } catch (error) {
-      console.error("Failed to load API key", error);
-      setShowApiKeyModal(true);
-    }
-  };
+  }, [apiKey]);
 
   const handleApiKeySubmit = async () => {
     if (tempApiKey.trim()) {
-      await saveApiKey(tempApiKey);
-      initializeAIService(tempApiKey);
+      await updateApiKey(tempApiKey);
       setShowApiKeyModal(false);
       setTempApiKey("");
     } else {
@@ -96,61 +86,71 @@ const Test = () => {
     }
   };
 
+  const handleApiKeyClose = () => {
+    setShowApiKeyModal(false);
+  };
+
+  // Show API key modal on app start if no key is found
   useEffect(() => {
-    loadApiKey();
-  }, []);
+    if (!apiKey) {
+      setShowApiKeyModal(true);
+    }
+  }, [apiKey]);
+
+  const scrollToBottom = () => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollToEnd({ animated: false })
+    }
+  }
 
   // Ultra-smooth scroll handling
-  const [userScrolledUp, setUserScrolledUp] = useState(false);
-  const scrollTimeoutRef = useRef(null);
-  const lastMessageIdRef = useRef(null);
-  const isScrollingRef = useRef(false);
+  const [userScrolledUp, setUserScrolledUp] = useState(false)
+  const scrollTimeoutRef = useRef(null)
+  const lastMessageIdRef = useRef(null)
+  const isScrollingRef = useRef(false)
+  const shouldAutoScrollRef = useRef(true)
 
   const handleScroll = (event) => {
-    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    const paddingToBottom = 20;
-    const isAtBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent
+    const paddingToBottom = 20
+    const isAtBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom
     
     // If user scrolls up, set flag to prevent auto-scrolling
     if (!isAtBottom) {
-      setUserScrolledUp(true);
+      shouldAutoScrollRef.current = false
     } else {
-      setUserScrolledUp(false);
+      shouldAutoScrollRef.current = true
     }
-  };
+  }
 
   useEffect(() => {
     // Clear any existing timeouts
     if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
+      clearTimeout(scrollTimeoutRef.current)
     }
 
     // Only auto-scroll if:
     // 1. User hasn't scrolled up manually
     // 2. There are messages to display
-    if (messages.length > 0 && !userScrolledUp) {
+    if (messages.length > 0 && shouldAutoScrollRef.current) {
       // Check if this is a new message or content update
-      const lastMessage = messages[messages.length - 1];
-      const isNewMessage = lastMessageIdRef.current !== lastMessage.id;
-      lastMessageIdRef.current = lastMessage.id;
+      const lastMessage = messages[messages.length - 1]
+      const isNewMessage = lastMessageIdRef.current !== lastMessage.id
+      lastMessageIdRef.current = lastMessage.id
 
       if (!isScrollingRef.current) {
-        isScrollingRef.current = true;
+        isScrollingRef.current = true
         
         if (isNewMessage) {
-          // For new messages, use smooth animation
+          // For new messages, scroll to bottom
           scrollTimeoutRef.current = setTimeout(() => {
-            if (scrollViewRef.current) {
-              scrollViewRef.current.scrollToEnd({ animated: true });
-            }
-            isScrollingRef.current = false;
-          }, 100);
+            scrollToBottom()
+            isScrollingRef.current = false
+          }, 100)
         } else {
-          // For streaming updates, use instant scroll without animation
-          if (scrollViewRef.current) {
-            scrollViewRef.current.scrollToEnd({ animated: false });
-          }
-          isScrollingRef.current = false;
+          // For streaming updates, scroll to bottom without animation
+          scrollToBottom()
+          isScrollingRef.current = false
         }
       }
     }
@@ -158,10 +158,10 @@ const Test = () => {
     // Cleanup timeout on unmount
     return () => {
       if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
+        clearTimeout(scrollTimeoutRef.current)
       }
-    };
-  }, [messages, userScrolledUp]);
+    }
+  }, [messages])
 
   const showStatusMessage = (message, type) => {
     if (type === 'error') {
@@ -169,7 +169,7 @@ const Test = () => {
     }
   };
 
-  const copyToClipboard = async (text) => {
+  const copyToClipboard = useCallback(async (text) => {
     try {
       await Clipboard.setStringAsync(text);
       showStatusMessage("Copied to clipboard!", 'success');
@@ -177,7 +177,7 @@ const Test = () => {
       console.error("Failed to copy text: ", error);
       showStatusMessage("Failed to copy to clipboard", 'error');
     }
-  };
+  }, [showStatusMessage]);
 
   const updateQueueUI = () => {
     // Not needed in React Native
@@ -187,7 +187,7 @@ const Test = () => {
     // Not needed in React Native
   };
 
-  const addMessage = (content, role, isStreaming = false) => {
+  const addMessage = useCallback((content, role, isStreaming = false) => {
     const newId = messageIdCounter.current++;
     const newMessage = {
       id: newId,
@@ -198,15 +198,28 @@ const Test = () => {
     
     setMessages(prev => [...prev, newMessage]);
     return newMessage.id;
-  };
+  }, []);
 
-  const updateMessageContent = (id, content, isStreaming = false) => {
-    setMessages(prev => 
-      prev.map(msg => 
-        msg.id === id ? { ...msg, content, isStreaming } : msg
-      )
-    );
-  };
+  const updateMessageContent = useCallback((id, content, isStreaming = false) => {
+    setMessages(prev => {
+      // Find the message that needs to be updated
+      const messageIndex = prev.findIndex(msg => msg.id === id);
+      
+      // If message not found, return previous state unchanged
+      if (messageIndex === -1) return prev;
+      
+      // If the content and streaming status are the same, don't update
+      if (prev[messageIndex].content === content && prev[messageIndex].isStreaming === isStreaming) {
+        return prev;
+      }
+      
+      // Create a new array with the updated message
+      const newMessages = [...prev];
+      newMessages[messageIndex] = { ...newMessages[messageIndex], content, isStreaming };
+      
+      return newMessages;
+    });
+  }, []);
 
   const processQueue = () => {
     if (isResponding || messageQueue.length === 0) return;
@@ -218,7 +231,8 @@ const Test = () => {
 
   const stopResponse = () => {
     if (!aiServiceRef.current) {
-      showStatusMessage('Please enter your Gemini API key first.', 'error');
+      // Show the API key modal instead of just an error message
+      setShowApiKeyModal(true);
       return;
     }
     
@@ -240,7 +254,8 @@ const Test = () => {
 
   const sendMessage = (messageData) => {
     if (!aiServiceRef.current) {
-      showStatusMessage('Please enter your Gemini API key first.', 'error');
+      // Show the API key modal instead of just an error message
+      setShowApiKeyModal(true);
       return;
     }
     
@@ -298,7 +313,8 @@ const Test = () => {
 
   const processPRReview = async (prUrl, instructions) => {
     if (!aiServiceRef.current) {
-      showStatusMessage('Please enter your Gemini API key first.', 'error');
+      // Show the API key modal instead of just an error message
+      setShowApiKeyModal(true);
       return;
     }
     
@@ -363,7 +379,8 @@ const Test = () => {
 
   const processDocumentation = async (messageText) => {
     if (!aiServiceRef.current) {
-      showStatusMessage('Please enter your Gemini API key first.', 'error');
+      // Show the API key modal instead of just an error message
+      setShowApiKeyModal(true);
       return;
     }
     
@@ -423,6 +440,12 @@ const Test = () => {
 
                     CRITICAL REQUIREMENT: You MUST include a Mermaid diagram in the "Workflow Diagram" section to visually represent the workflow of the code changes. This is mandatory for any non-trivial changes. Use a 'graph TD' (top-down) or 'flowchart' diagram. Label all nodes and connections clearly. Include decision points, data flow, and key processing steps.
 
+                    IMPORTANT MERMAID DIAGRAM FORMATTING RULES:
+                    - Always use double quotes around node labels that contain special characters like parentheses, brackets, or quotes
+                    - Example: A["Load Content Template: e.g., email-magic-url.tpl (now a partial)"]
+                    - Escape special characters when needed with backslashes
+                    - Keep diagrams simple and focused on the key workflow steps
+
                     Your markdown should follow this structure exactly:
 
                     ## 🚀 What does this PR do?
@@ -470,7 +493,7 @@ const Test = () => {
 
                     \`\`\`mermaid
                     graph TD;
-                        A[Start] --> B[Initialize Components];
+                        A[Start] --> B["Initialize Components (with parentheses)"];
                         B --> C{Condition Check};
                         C -->|True| D[Process Path 1];
                         C -->|False| E[Process Path 2];
@@ -517,7 +540,8 @@ const Test = () => {
 
   const getAiResponse = async (userMessage, isPRReview = false, mode = null) => {
     if (!aiServiceRef.current) {
-      showStatusMessage('Please enter your Gemini API key first.', 'error');
+      // Show the API key modal instead of just an error message
+      setShowApiKeyModal(true);
       return;
     }
     
@@ -548,7 +572,8 @@ const Test = () => {
 
   const setMode = (newMode) => {
     if (!aiServiceRef.current) {
-      showStatusMessage('Please enter your Gemini API key first.', 'error');
+      // Show the API key modal instead of just an error message
+      setShowApiKeyModal(true);
       return;
     }
     
@@ -581,27 +606,24 @@ const Test = () => {
     }
   };
 
-  const renderMessage = (message, index) => {
-    const isLastMessage = index === messages.length - 1;
-    
+  const renderMessage = useCallback((message, index) => {
     return (
       <MessageBubble
         key={message.id}
         message={message}
         theme={theme}
-        isLastMessage={isLastMessage}
         messageBubbleWidth={messageBubbleWidth}
         copyToClipboard={copyToClipboard}
         isDesktop={isDesktop}
       />
     );
-  };
+  }, [theme, messageBubbleWidth, copyToClipboard, isDesktop]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ApiKeyModal 
         visible={showApiKeyModal}
-        onClose={() => setShowApiKeyModal(false)}
+        onClose={handleApiKeyClose}
         onSubmit={handleApiKeySubmit}
         apiKey={tempApiKey}
         setApiKey={setTempApiKey}
@@ -630,7 +652,55 @@ const Test = () => {
           onScroll={handleScroll}
           scrollEventThrottle={16}
         >
-          {messages.length === 0 ? (
+          {/* Show chat history even when there's no API key, but show API key prompt when there are no messages */}
+          {messages.length === 0 && !apiKey ? (
+            <View style={styles.welcomeContainer}>
+              <View style={[styles.welcomeContent, { 
+                backgroundColor: theme.mode === 'dark' ? 'hsl(210, 11%, 9%)' : 'hsl(0, 0%, 100%)',
+                borderColor: theme.mode === 'dark' ? 'hsl(210, 11%, 15%)' : 'hsl(210, 11%, 90%)',
+                width: isDesktop ? '70%' : '90%',
+                borderRadius: 12,
+                borderWidth: 1,
+                padding: 24,
+              }]}>
+                <Text style={[styles.welcomeTitle, { 
+                  color: theme.mode === 'dark' ? 'hsl(160, 14%, 93%)' : 'hsl(210, 11%, 15%)',
+                  fontSize: 22,
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                  marginBottom: 12,
+                }]}>
+                  API Key Required
+                </Text>
+                
+                <Text style={[styles.welcomeDescription, { 
+                  color: theme.mode === 'dark' ? 'hsl(210, 11%, 71%)' : 'hsl(210, 11%, 50%)',
+                  fontSize: 16,
+                  textAlign: 'center',
+                  marginBottom: 20,
+                  lineHeight: 22,
+                }]}>
+                  Please enter your Gemini API key to use the PR Assistant features.
+                </Text>
+                
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonPrimary, { 
+                    alignSelf: 'center',
+                    minWidth: 120,
+                  }]}
+                  onPress={() => setShowApiKeyModal(true)}
+                >
+                  <Text style={{ 
+                    color: '#ffffff', 
+                    fontSize: 16, 
+                    fontWeight: '500' 
+                  }}>
+                    Enter API Key
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : messages.length === 0 ? (
             <View style={styles.welcomeContainer}>
               <View style={[styles.welcomeContent, { 
                 backgroundColor: theme.mode === 'dark' ? 'hsl(210, 11%, 9%)' : 'hsl(0, 0%, 100%)',
@@ -745,15 +815,21 @@ const Test = () => {
               </View>
             </View>
           ) : (
-            messages.map((message, index) => renderMessage(message, index))
+            <View style={{ width: '100%' }}>
+              {messages.map((message, index) => renderMessage(message, index))}
+              <View style={{ height: 40 }} />
+            </View>
           )}
         </ScrollView>
 
+        {/* Always show the ChatInterface, but disable it when there's no API key */}
         <View style={styles.chatInputContainer}>
           <ChatInterface 
             onSendMessage={sendMessage} 
             onModeChange={setMode}
             currentMode={currentMode === 'pr-review' ? 'pr-review' : currentMode}
+            disabled={!apiKey}
+            placeholder={apiKey ? "Type your message..." : "Enter API key to start chatting..."}
           />
         </View>
       </View>
@@ -777,7 +853,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   messageContainer: {
-    padding: 12,
+    padding: 2,
     paddingBottom: 80,
     alignItems: 'center',
     alignSelf: 'center',
@@ -928,7 +1004,6 @@ const styles = StyleSheet.create({
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 12,
   },
   modalButton: {
     paddingVertical: 12,
@@ -953,4 +1028,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Test;
+export default React.memo(Test);
