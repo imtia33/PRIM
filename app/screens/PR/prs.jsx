@@ -22,15 +22,16 @@ import MessageBubble from '../../../componants/MessageBubble';
 import * as Clipboard from 'expo-clipboard';
 import ApiKeyModal from '../../../componants/modals/ApiKeyModal';
 import DocumentationModal from '../../../componants/modals/DocumentationModal';
+import { useAppwriteContext } from '../../../context/appwriteContext';
 
 const GEMINI_API_KEY = "gemini_api_key";
 
 const Test = () => {
   const { width } = useWindowDimensions();
   const { theme } = useTheme();
-  const [apiKey, setApiKey] = useState(null);
+  const { apiKey, updateApiKey } = useAppwriteContext();
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-  const [tempApiKey, setTempApiKey] = "";
+  const [tempApiKey, setTempApiKey] = useState("");
 
   const aiServiceRef = useRef(null);
   const [currentMode, setCurrentMode] = useState('chat');
@@ -59,36 +60,19 @@ const Test = () => {
   const initializeAIService = (key) => {
     if (key) {
       aiServiceRef.current = createAIChatService(key);
-      setApiKey(key);
     }
   };
 
-  const saveApiKey = async (key) => {
-    try {
-      await AsyncStorage.setItem(GEMINI_API_KEY, key);
-    } catch (error) {
-      console.error("Failed to save API key", error);
+  // Initialize AI service when API key changes
+  useEffect(() => {
+    if (apiKey) {
+      initializeAIService(apiKey);
     }
-  };
-
-  const loadApiKey = async () => {
-    try {
-      const storedApiKey = await AsyncStorage.getItem(GEMINI_API_KEY);
-      if (storedApiKey) {
-        initializeAIService(storedApiKey);
-      } else {
-        setShowApiKeyModal(true);
-      }
-    } catch (error) {
-      console.error("Failed to load API key", error);
-      setShowApiKeyModal(true);
-    }
-  };
+  }, [apiKey]);
 
   const handleApiKeySubmit = async () => {
     if (tempApiKey.trim()) {
-      await saveApiKey(tempApiKey);
-      initializeAIService(tempApiKey);
+      await updateApiKey(tempApiKey);
       setShowApiKeyModal(false);
       setTempApiKey("");
     } else {
@@ -96,9 +80,16 @@ const Test = () => {
     }
   };
 
+  const handleApiKeyClose = () => {
+    setShowApiKeyModal(false);
+  };
+
+  // Show API key modal on app start if no key is found
   useEffect(() => {
-    loadApiKey();
-  }, []);
+    if (!apiKey) {
+      setShowApiKeyModal(true);
+    }
+  }, [apiKey]);
 
   // Ultra-smooth scroll handling
   const [userScrolledUp, setUserScrolledUp] = useState(false);
@@ -218,7 +209,8 @@ const Test = () => {
 
   const stopResponse = () => {
     if (!aiServiceRef.current) {
-      showStatusMessage('Please enter your Gemini API key first.', 'error');
+      // Show the API key modal instead of just an error message
+      setShowApiKeyModal(true);
       return;
     }
     
@@ -240,7 +232,8 @@ const Test = () => {
 
   const sendMessage = (messageData) => {
     if (!aiServiceRef.current) {
-      showStatusMessage('Please enter your Gemini API key first.', 'error');
+      // Show the API key modal instead of just an error message
+      setShowApiKeyModal(true);
       return;
     }
     
@@ -298,7 +291,8 @@ const Test = () => {
 
   const processPRReview = async (prUrl, instructions) => {
     if (!aiServiceRef.current) {
-      showStatusMessage('Please enter your Gemini API key first.', 'error');
+      // Show the API key modal instead of just an error message
+      setShowApiKeyModal(true);
       return;
     }
     
@@ -363,7 +357,8 @@ const Test = () => {
 
   const processDocumentation = async (messageText) => {
     if (!aiServiceRef.current) {
-      showStatusMessage('Please enter your Gemini API key first.', 'error');
+      // Show the API key modal instead of just an error message
+      setShowApiKeyModal(true);
       return;
     }
     
@@ -517,7 +512,8 @@ const Test = () => {
 
   const getAiResponse = async (userMessage, isPRReview = false, mode = null) => {
     if (!aiServiceRef.current) {
-      showStatusMessage('Please enter your Gemini API key first.', 'error');
+      // Show the API key modal instead of just an error message
+      setShowApiKeyModal(true);
       return;
     }
     
@@ -548,7 +544,8 @@ const Test = () => {
 
   const setMode = (newMode) => {
     if (!aiServiceRef.current) {
-      showStatusMessage('Please enter your Gemini API key first.', 'error');
+      // Show the API key modal instead of just an error message
+      setShowApiKeyModal(true);
       return;
     }
     
@@ -601,7 +598,7 @@ const Test = () => {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ApiKeyModal 
         visible={showApiKeyModal}
-        onClose={() => setShowApiKeyModal(false)}
+        onClose={handleApiKeyClose}
         onSubmit={handleApiKeySubmit}
         apiKey={tempApiKey}
         setApiKey={setTempApiKey}
@@ -630,7 +627,55 @@ const Test = () => {
           onScroll={handleScroll}
           scrollEventThrottle={16}
         >
-          {messages.length === 0 ? (
+          {/* Show chat history even when there's no API key, but show API key prompt when there are no messages */}
+          {messages.length === 0 && !apiKey ? (
+            <View style={styles.welcomeContainer}>
+              <View style={[styles.welcomeContent, { 
+                backgroundColor: theme.mode === 'dark' ? 'hsl(210, 11%, 9%)' : 'hsl(0, 0%, 100%)',
+                borderColor: theme.mode === 'dark' ? 'hsl(210, 11%, 15%)' : 'hsl(210, 11%, 90%)',
+                width: isDesktop ? '70%' : '90%',
+                borderRadius: 12,
+                borderWidth: 1,
+                padding: 24,
+              }]}>
+                <Text style={[styles.welcomeTitle, { 
+                  color: theme.mode === 'dark' ? 'hsl(160, 14%, 93%)' : 'hsl(210, 11%, 15%)',
+                  fontSize: 22,
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                  marginBottom: 12,
+                }]}>
+                  API Key Required
+                </Text>
+                
+                <Text style={[styles.welcomeDescription, { 
+                  color: theme.mode === 'dark' ? 'hsl(210, 11%, 71%)' : 'hsl(210, 11%, 50%)',
+                  fontSize: 16,
+                  textAlign: 'center',
+                  marginBottom: 20,
+                  lineHeight: 22,
+                }]}>
+                  Please enter your Gemini API key to use the PR Assistant features.
+                </Text>
+                
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalButtonPrimary, { 
+                    alignSelf: 'center',
+                    minWidth: 120,
+                  }]}
+                  onPress={() => setShowApiKeyModal(true)}
+                >
+                  <Text style={{ 
+                    color: '#ffffff', 
+                    fontSize: 16, 
+                    fontWeight: '500' 
+                  }}>
+                    Enter API Key
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : messages.length === 0 ? (
             <View style={styles.welcomeContainer}>
               <View style={[styles.welcomeContent, { 
                 backgroundColor: theme.mode === 'dark' ? 'hsl(210, 11%, 9%)' : 'hsl(0, 0%, 100%)',
@@ -749,11 +794,14 @@ const Test = () => {
           )}
         </ScrollView>
 
+        {/* Always show the ChatInterface, but disable it when there's no API key */}
         <View style={styles.chatInputContainer}>
           <ChatInterface 
             onSendMessage={sendMessage} 
             onModeChange={setMode}
             currentMode={currentMode === 'pr-review' ? 'pr-review' : currentMode}
+            disabled={!apiKey}
+            placeholder={apiKey ? "Type your message..." : "Enter API key to start chatting..."}
           />
         </View>
       </View>
